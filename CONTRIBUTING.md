@@ -169,3 +169,31 @@ node tools/check-pr-title.mjs "feat: 增加备份完整性校验步骤"
 2. 步骤是否可独立验证，有没有「适当处理」这类无法执行的表述；
 3. 是否隐含依赖其他技能、或依赖作者本机才有的路径与账号；
 4. 派生技能的 LICENSE 与 NOTICE 是否齐全、上游许可是否在白名单内。
+
+## 维护者备注
+
+### 配置必需检查时，不要带工作流前缀
+
+`main` 分支由 ruleset `main-protection` 保护，必需检查两项，ruleset 里应填的值就是各 job 的显示名：
+
+| 工作流 | 检查名（ruleset 中的 `context`） |
+|---|---|
+| `validate` | `结构与元数据` |
+| `pr-title` | `PR 标题` |
+
+必须从 Add checks 的 **Suggestions** 中选右侧带 `GitHub Actions` 标记的条目，保存后 API 会带上 `integration_id: 15368`，即绑定了来源应用。
+
+**不要手打，也不要选「Add manually」。** 合并框里把检查显示成 `validate / 结构与元数据`，那个 `workflow / ` 前缀只是展示用，不属于 `context` 字符串。把它一起填进 ruleset，检查再绿也会被判 `Expected — Waiting for status to be reported`，PR 永久无法合并——而且报错只说「required status checks are expected」，很容易误判成 CI 没跑或分支不新。
+
+确认方法：
+
+```
+gh api repos/<owner>/<repo>/rulesets/<id> \
+  --jq '.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks'
+```
+
+如果返回的 `context` 里带 ` / ` 前缀，或者缺少 `integration_id`，就是配置错了，与 CI 无关。
+
+### 发布相关
+
+`release` 工作流需要 `contents: write`，是仓库里唯一带写权限的工作流；`validate` 与 `pr-title` 都只申请 `contents: read`。改动工作流权限时请保持这个划分。
