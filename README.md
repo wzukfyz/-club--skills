@@ -53,6 +53,7 @@ gh skill update --all
 | 技能 | 说明 | 标签 | 版本 | 负责人 |
 | --- | --- | --- | --- | --- |
 | [dev-code-comment-style](skills/dev-code-comment-style/SKILL.md) | 基于 Google Style Guides 提炼的代码注释规范，覆盖 16 种语言的注释编写与审查 | comment, docstring, code-review, style-guide | 1.0.0 | 开源社团运维部 |
+| [dev-requirement-clarifier](skills/dev-requirement-clarifier/SKILL.md) | 需求澄清工具：当用户请求存在模糊信号时暂停执行，输出结构化问卷引导用户明确业务目标、数据、指标、技术偏好与交付物 | requirement, clarification, workflow | 1.0.0 | 开源社团运维部 |
 <!-- SKILLS:END -->
 
 ## 贡献
