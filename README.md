@@ -50,7 +50,9 @@ gh skill update --all
 ## 技能目录
 
 <!-- SKILLS:START -->
-_暂无技能，欢迎按 CONTRIBUTING.md 贡献。_
+| 技能 | 说明 | 标签 | 版本 | 负责人 |
+| --- | --- | --- | --- | --- |
+| [dev-code-comment-style](skills/dev-code-comment-style/SKILL.md) | 基于 Google Style Guides 提炼的代码注释规范，覆盖 16 种语言的注释编写与审查 | comment, docstring, code-review, style-guide | 1.0.0 | 开源社团运维部 |
 <!-- SKILLS:END -->
 
 ## 贡献
