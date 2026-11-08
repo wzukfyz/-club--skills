@@ -138,6 +138,31 @@ fix: 修正 README 安装命令中的作用域参数
 
 跨技能的改动请拆成多个提交。
 
+### PR 标题
+
+本仓库只允许 **squash 合并**，PR 标题会成为 main 上的最终提交信息，因此标题必须符合同一套约定，CI 会逐字校验（`tools/check-pr-title.mjs`）：
+
+- `type` 只能是 `feat` `fix` `docs` `refactor` `perf` `test` `build` `ci` `chore` `style` `revert`；
+- 描述部分必须含简体中文，末尾不加句号；
+- 整行不超过 100 字符；
+- 机器人账号（`xxx[bot]`）的 PR 跳过标题检查。
+
+本地可以预跑：
+
+```
+node tools/check-pr-title.mjs "feat: 增加备份完整性校验步骤"
+```
+
+## 发布
+
+发布 = 打一个仓库级 tag，不是部署。`gh skill install` 解析版本时走 git tag，所以一个 tag 代表「某一时刻的整仓快照」；各技能的 `metadata.version` 独立演进，仅供展示，不与 tag 绑定。
+
+1. 确认目标改动都已合入 main 且 CI 全绿；
+2. Actions → `release` → Run workflow，输入不带 `v` 的版本号，例如 `1.0.0`；
+3. 工作流会依次校验版本号格式、确认 tag 未被占用、跑一遍自测与仓库校验、打 tag、创建 Release，并在正文追加本次快照的技能清单。
+
+需要精确复现某次安装时用 `--pin <tag 或 commit SHA>`，不要指望 `metadata.version`。
+
 ## 评审关注点
 
 1. `description` 是否真的写了触发场景——它是 Agent 决定要不要加载这个技能的唯一依据，写成标题等于技能永远不会被用到；
