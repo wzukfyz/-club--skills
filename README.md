@@ -11,7 +11,7 @@
 ### 通用安装（多数客户端）
 
 ```bash
-gh skill install <owner>/club-skills <skill-name> --agent universal --scope user
+gh skill install wzukfyz/-club--skills <skill-name> --agent universal --scope user
 ```
 
 装到 `~/.agents/skills/`，Claude Code、Codex、Cursor、OpenCode、Gemini CLI 等都会读取该目录。
@@ -19,9 +19,9 @@ gh skill install <owner>/club-skills <skill-name> --agent universal --scope user
 ### 指定客户端
 
 ```bash
-gh skill install <owner>/club-skills <skill-name> --agent claude-code --scope user
-gh skill install <owner>/club-skills <skill-name> --agent codex --scope user
-gh skill install <owner>/club-skills <skill-name> --agent cursor --scope user
+gh skill install wzukfyz/-club--skills <skill-name> --agent claude-code --scope user
+gh skill install wzukfyz/-club--skills <skill-name> --agent codex --scope user
+gh skill install wzukfyz/-club--skills <skill-name> --agent cursor --scope user
 ```
 
 完整取值见 `gh skill install --help`。
@@ -31,7 +31,7 @@ gh skill install <owner>/club-skills <skill-name> --agent cursor --scope user
 用 `--dir` 直接指向该客户端的 skills 根目录。例如 WorkBuddy：
 
 ```bash
-gh skill install <owner>/club-skills <skill-name> --dir ~/.workbuddy/skills
+gh skill install wzukfyz/-club--skills <skill-name> --dir ~/.workbuddy/skills
 ```
 
 ### 注意事项
@@ -39,7 +39,7 @@ gh skill install <owner>/club-skills <skill-name> --dir ~/.workbuddy/skills
 - `--scope` 默认是 `project`，装到用户级必须显式写 `--scope user`。
 - `--dir` 会覆盖 `--agent` 与 `--scope`，三者不要混写。
 - 需要可复现安装时用 `--pin <tag 或 commit SHA>`。`gh skill` 解析版本走 git tag，不读 `SKILL.md` 中的 `metadata.version`。
-- 安装前建议先 `gh skill preview <owner>/club-skills <skill-name>` 检查内容。技能未经验证于 GitHub，请自行审查后再安装。
+- 安装前建议先 `gh skill preview wzukfyz/-club--skills <skill-name>` 检查内容。技能未经验证于 GitHub，请自行审查后再安装。
 
 ### 更新
 
