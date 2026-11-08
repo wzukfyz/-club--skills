@@ -1,0 +1,78 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 版本号，不带 v 前缀，例如 1.0.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 打 tag 并发布
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 生成 release notes 需要历史提交来比对上一个 tag
+          fetch-depth: 0
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 校验版本号格式
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! printf '%s' "$VERSION" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::版本号 $VERSION 不是合法 SemVer，且不能带 v 前缀"
+            exit 1
+          fi
+
+      - name: 确认 tag 未被占用
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "::error::tag v$VERSION 已存在，请换一个版本号"
+            exit 1
+          fi
+
+      - name: 发布前校验
+        run: |
+          node --test
+          node tools/validate.mjs
+
+      - name: 打 tag 并推送
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: 创建 Release 并附上技能清单
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "v$VERSION" --generate-notes --title "v$VERSION"
+          gh release view "v$VERSION" --json body -q .body > /tmp/body.md
+          {
+            cat /tmp/body.md
+            echo
+            node tools/release-notes.mjs
+          } > /tmp/notes.md
+          gh release edit "v$VERSION" --notes-file /tmp/notes.md
