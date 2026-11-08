@@ -1,0 +1,31 @@
+name: pr-title
+
+on:
+  pull_request:
+    branches: [main]
+    # 必须包含 synchronize：必需检查是绑定在 head commit 上的，
+    # 推新提交后若不重跑，该检查会缺失并导致 PR 无法合并。
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: PR 标题
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 校验标题格式
+        run: node tools/check-pr-title.mjs
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
