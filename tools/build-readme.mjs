@@ -18,9 +18,9 @@ export const EMPTY_HINT = '_暂无技能，欢迎按 CONTRIBUTING.md 贡献。_'
 
 const README_FILE = 'README.md';
 const SKILLS_DIR = 'skills';
-const SUMMARY_LIMIT = 60;
-/** 摘要截断点：命中任一句读符号即止。 */
-const SUMMARY_STOP_CHARS = ['。', '；', '.', ';'];
+const SUMMARY_LIMIT = 72;
+/** 摘要的最短期望长度；首句不足这个数就继续延伸到下一个句读。 */
+const SUMMARY_MIN = 20;
 const CONTEXT_LINES = 3;
 
 /**
@@ -123,17 +123,49 @@ function compareByName(a, b) {
   return 0;
 }
 
-/** 截到第一个句读符号，再限制字符数。表格里的竖线需转义。 */
+/**
+ * 判断某个位置是不是句子结束的句读点。
+ *
+ * 中文的「。」「；」无条件算；ASCII 的 `.` `;` 只在后面是空白或行尾时才算，
+ * 否则会把 `.md`、`v1.0.0` 这类写法从中间切断。
+ */
+function isStopAt(text, index) {
+  const char = text[index];
+  if (char === '。' || char === '；') return true;
+  if (char !== '.' && char !== ';') return false;
+  const next = text[index + 1];
+  return next === undefined || next === ' ';
+}
+
+/**
+ * 截到合适的句读符号，再限制字符数。
+ *
+ * 取第一个长度达到 SUMMARY_MIN 的句读点：不少 description 的首句只有「XX 助手」
+ * 几个字，直接截断会让 README 的说明列形同虚设。所有句读点都太短时退回第一个，
+ * 避免摘要一口气吃掉整段；连句读点都没有时硬截到上限并加省略号。
+ */
 function summarize(description) {
   let cut = description.length;
-  for (const stop of SUMMARY_STOP_CHARS) {
-    const index = description.indexOf(stop);
-    if (index > 0 && index < cut) cut = index;
+  let fallback = -1;
+
+  for (let i = 0; i < description.length; i += 1) {
+    if (!isStopAt(description, i)) continue;
+    if (fallback === -1) fallback = i;
+    if (i >= SUMMARY_MIN) {
+      cut = i;
+      break;
+    }
+  }
+  if (cut === description.length && fallback > 0) cut = fallback;
+
+  let hardCut = false;
+  if (cut > SUMMARY_LIMIT) {
+    cut = SUMMARY_LIMIT;
+    hardCut = true;
   }
 
-  const chars = [...description.slice(0, cut).trim()];
-  const text = chars.length > SUMMARY_LIMIT ? `${chars.slice(0, SUMMARY_LIMIT).join('').trimEnd()}…` : chars.join('');
-  return text.replaceAll('|', '\\|');
+  const text = [...description.slice(0, cut).trim()].join('');
+  return (hardCut ? `${text.trimEnd()}…` : text).replaceAll('|', '\\|');
 }
 
 /** 表格单元格转义。 */
