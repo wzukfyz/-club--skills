@@ -308,14 +308,22 @@ function checkDerivedNotice(dirAbs, relBase, add) {
   }
 }
 
+/**
+ * 跨技能引用的判定式：`../` 后面必须真的跟着路径片段才算引用。
+ *
+ * 正文里单独提到 `../`（例如在讲「跨目录不要用 `../`」这条规则本身）不算引用，
+ * 否则规则说明的文字会把规则自己触发掉。
+ */
+const CROSS_SKILL_REF = /\.\.[/\\](?=[^\s`）)】」])/;
+
 /** 禁止跨技能相对引用：单技能安装后其他技能目录并不存在。 */
 function checkRelativeLinks(dirAbs, relBase, add) {
   for (const file of collectFiles(dirAbs, relBase)) {
     if (!file.rel.toLowerCase().endsWith('.md')) continue;
     const lines = readFileSync(file.abs, 'utf8').split(/\r?\n/);
     lines.forEach((lineText, index) => {
-      if (lineText.includes('../')) {
-        add(file.rel, index + 1, '禁止跨技能相对引用（出现 ../），单技能安装后目标文件不存在');
+      if (CROSS_SKILL_REF.test(lineText)) {
+        add(file.rel, index + 1, '禁止跨技能相对引用（出现 ../ 路径），单技能安装后目标文件不存在');
       }
     });
   }
