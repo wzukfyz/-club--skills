@@ -143,6 +143,27 @@ test('出现跨技能相对引用时报错', (t) => {
   expectError(validateRepo(root), '禁止跨技能相对引用');
 });
 
+test('反引号里的跨技能路径同样报错', (t) => {
+  const root = createRepo(t);
+  const body = VALID_BODY.replace('需要验证仓库规范时使用。', '读取 `../ops-other/references/x.md` 里的说明。');
+  writeSkill(root, VALID_META, body);
+  writeReadme(root);
+
+  expectError(validateRepo(root), '禁止跨技能相对引用');
+});
+
+test('正文提到 ../ 但后面没有路径时不算引用', (t) => {
+  const root = createRepo(t);
+  const body = VALID_BODY.replace(
+    '需要验证仓库规范时使用。',
+    '跨目录禁用 `../` 相对路径；单独出现 `../` 也不算违规。',
+  );
+  writeSkill(root, VALID_META, body);
+  writeReadme(root);
+
+  assert.deepEqual(validateRepo(root), []);
+});
+
 test('单文件超过 2MB 时报错', (t) => {
   const root = createRepo(t);
   const dir = writeSkill(root);
