@@ -102,6 +102,7 @@ function inspectSkill(root, dirName, add) {
   checkSizes(dirAbs, relDir, add);
   checkDerivedNotice(dirAbs, relDir, add);
   checkRelativeLinks(dirAbs, relDir, add);
+  checkInvisibleChars(dirAbs, relDir, add);
 
   const text = readFileSync(fileAbs, 'utf8');
   const lines = text.split(/\r?\n/);
@@ -305,6 +306,45 @@ function checkDerivedNotice(dirAbs, relBase, add) {
   const hasNotice = existsSync(path.join(dirAbs, 'NOTICE'));
   if (hasLicense !== hasNotice) {
     add(relBase, 1, '派生技能必须同时提供 LICENSE 与 NOTICE');
+  }
+}
+
+/**
+ * 不可见字符：零宽字符、双向控制符、BOM 与 C0/C1 控制字符。
+ *
+ * 制表符与换行是正常排版，不在其列；全角空格（U+3000）肉眼可见，也不拦。
+ */
+const INVISIBLE_CHARS =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/;
+
+/** 常见不可见字符的名字，报错时给人看得懂的提示。 */
+const INVISIBLE_NAMES = new Map([
+  ['\u200B', '零宽空格'],
+  ['\u200C', '零宽不连字'],
+  ['\u200D', '零宽连字'],
+  ['\u200E', '从左到右标记'],
+  ['\u200F', '从右到左标记'],
+  ['\u2060', '词连接符'],
+  ['\uFEFF', '零宽不换行空格（BOM）'],
+]);
+
+/**
+ * 禁止不可见字符：编辑器里看不见，却会破坏搜索、渲染与 diff。
+ *
+ * 从网页或聊天窗口粘贴文本最容易带上它们，而 frontmatter 里混进一个
+ * U+200B 会让 `name` 与目录名「看起来一模一样却不相等」。
+ */
+function checkInvisibleChars(dirAbs, relBase, add) {
+  for (const file of collectFiles(dirAbs, relBase)) {
+    if (!file.rel.toLowerCase().endsWith('.md')) continue;
+    const lines = readFileSync(file.abs, 'utf8').split(/\r?\n/);
+    lines.forEach((lineText, index) => {
+      const hit = lineText.match(INVISIBLE_CHARS);
+      if (!hit) return;
+      const code = `U+${hit[0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`;
+      const name = INVISIBLE_NAMES.get(hit[0]) ?? '不可见控制字符';
+      add(file.rel, index + 1, `含不可见字符 ${code}（${name}），请删除后重试`);
+    });
   }
 }
 
