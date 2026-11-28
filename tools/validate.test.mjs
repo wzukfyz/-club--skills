@@ -164,6 +164,47 @@ test('正文提到 ../ 但后面没有路径时不算引用', (t) => {
   assert.deepEqual(validateRepo(root), []);
 });
 
+test('正文含零宽空格时报错', (t) => {
+  const root = createRepo(t);
+  const body = VALID_BODY.replace('需要验证仓库规范时使用。', '需要验证\u200B仓库规范时使用。');
+  writeSkill(root, VALID_META, body);
+  writeReadme(root);
+
+  expectError(validateRepo(root), 'U+200B');
+});
+
+test('references 下的零宽字符同样报错', (t) => {
+  const root = createRepo(t);
+  const dir = writeSkill(root);
+  writeReadme(root);
+
+  const references = path.join(dir, 'references');
+  mkdirSync(references);
+  writeFileSync(path.join(references, 'note.md'), '# 速查\n\n行尾有个零宽连字\u200D。\n', 'utf8');
+
+  expectError(validateRepo(root), 'U+200D');
+});
+
+test('文件开头的 BOM 按不可见字符报错', (t) => {
+  const root = createRepo(t);
+  const dir = writeSkill(root);
+  writeReadme(root);
+
+  const skillPath = path.join(dir, 'SKILL.md');
+  writeFileSync(skillPath, `\uFEFF${VALID_BODY}`, 'utf8');
+
+  expectError(validateRepo(root), 'U+FEFF');
+});
+
+test('制表符与全角空格不算不可见字符', (t) => {
+  const root = createRepo(t);
+  const body = VALID_BODY.replace('需要验证仓库规范时使用。', '\t需要验证\u3000仓库规范时使用。');
+  writeSkill(root, VALID_META, body);
+  writeReadme(root);
+
+  assert.deepEqual(validateRepo(root), []);
+});
+
 test('单文件超过 2MB 时报错', (t) => {
   const root = createRepo(t);
   const dir = writeSkill(root);
